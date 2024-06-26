@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">Tic Tac Toe</h1>
+        <div class="text-center my-4">
+            <label for="difficulty">Select Difficulty: </label>
+            <select id="difficulty" class="form-control w-25 mx-auto">
+                <option value="beginner">Beginner</option>
+                <option value="professional">Professional</option>
+            </select>
+        </div>
+        <div class="board">
+            <div class="row">
+                <div class="col-4 square" data-index="0"></div>
+                <div class="col-4 square" data-index="1"></div>
+                <div class="col-4 square" data-index="2"></div>
+            </div>
+            <div class="row">
+                <div class="col-4 square" data-index="3"></div>
+                <div class="col-4 square" data-index="4"></div>
+                <div class="col-4 square" data-index="5"></div>
+            </div>
+            <div class="row">
+                <div class="col-4 square" data-index="6"></div>
+                <div class="col-4 square" data-index="7"></div>
+                <div class="col-4 square" data-index="8"></div>
+            </div>
+        </div>
+        <div class="text-center my-4">
+            <button id="resetButton" class="btn btn-primary">Restart Game</button>
+        </div>
+        <p id="message" class="text-center"></p>
+    </div>
+    <footer class="bg-dark text-white text-center py-3">
+        <p>&copy; 2024 MK-developer. All rights reserved.</p>
+        <p id="datetime"></p>
+        <p class="cop"style="text-align: center;">Powered By: <img src="image/pick.jpg" class="img-responsive" style="width:100px;"></p>
+
+    </footer>
+
+    <style>
+        body {
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+}
+
+.board {
+    margin: 0 auto;
+    width: 300px;
+}
+
+.square {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+}
+
+.square:hover {
+    background-color: #e0e0e0;
+}
+
+.text-center {
+    text-align: center;
+}
+
+    </style>
+
+    <script>
+        const board = Array(9).fill(null);
+let currentPlayer = 'X';
+let gameOver = false;
+const winningCombination = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+];
+
+document.querySelectorAll('.square').forEach(square => {
+    square.addEventListener('click', handleSquareClick);
+});
+
+document.getElementById('resetButton').addEventListener('click', resetGame);
+document.getElementById('difficulty').addEventListener('change', resetGame);
+
+function handleSquareClick(event) {
+    const index = event.target.getAttribute('data-index');
+    if (!board[index] && !gameOver) {
+        board[index] = currentPlayer;
+        event.target.textContent = currentPlayer;
+        if (checkWinner()) {
+            document.getElementById('message').textContent = `${currentPlayer} wins!`;
+            gameOver = true;
+        } else if (board.every(square => square)) {
+            document.getElementById('message').textContent = 'It\'s a tie!';
+            gameOver = true;
+        } else {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            if (currentPlayer === 'O') {
+                computerMove();
+            }
+        }
+    }
+}
+
+function computerMove() {
+    const difficulty = document.getElementById('difficulty').value;
+    if (difficulty === 'beginner') {
+        const emptySquares = board.map((value, index) => value === null ? index : null).filter(value => value !== null);
+        const randomSquare = emptySquares[Math.floor(Math.random() * emptySquares.length)];
+        board[randomSquare] = currentPlayer;
+        document.querySelector(`[data-index='${randomSquare}']`).textContent = currentPlayer;
+    } else if (difficulty === 'professional') {
+        const bestMove = minimax(board, currentPlayer).index;
+        board[bestMove] = currentPlayer;
+        document.querySelector(`[data-index='${bestMove}']`).textContent = currentPlayer;
+    }
+    if (checkWinner()) {
+        document.getElementById('message').textContent = `${currentPlayer} wins!`;
+        gameOver = true;
+    } else if (board.every(square => square)) {
+        document.getElementById('message').textContent = 'It\'s a tie!';
+        gameOver = true;
+    } else {
+        currentPlayer = 'X';
+    }
+}
+
+function checkWinner() {
+    return winningCombination.some(combination => {
+        const [a, b, c] = combination;
+        return board[a] && board[a] === board[b] && board[a] === board[c];
+    });
+}
+
+function resetGame() {
+    board.fill(null);
+    document.querySelectorAll('.square').forEach(square => {
+        square.textContent = '';
+    });
+    currentPlayer = 'X';
+    gameOver = false;
+    document.getElementById('message').textContent = '';
+}
+
+function minimax(newBoard, player) {
+    const availSpots = newBoard.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+
+    if (checkWin(newBoard, 'X')) {
+        return { score: -10 };
+    } else if (checkWin(newBoard, 'O')) {
+        return { score: 10 };
+    } else if (availSpots.length === 0) {
+        return { score: 0 };
+    }
+
+    const moves = [];
+
+    for (let i = 0; i < availSpots.length; i++) {
+        const move = {};
+        move.index = availSpots[i];
+        newBoard[availSpots[i]] = player;
+
+        if (player === 'O') {
+            const result = minimax(newBoard, 'X');
+            move.score = result.score;
+        } else {
+            const result = minimax(newBoard, 'O');
+            move.score = result.score;
+        }
+
+        newBoard[availSpots[i]] = null;
+        moves.push(move);
+    }
+
+    let bestMove;
+    if (player === 'O') {
+        let bestScore = -Infinity;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].score > bestScore) {
+                bestScore = moves[i].score;
+                bestMove = i;
+            }
+        }
+    } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].score < bestScore) {
+                bestScore = moves[i].score;
+                bestMove = i;
+            }
+        }
+    }
+
+    return moves[bestMove];
+}
+
+function checkWin(board, player) {
+    return winningCombination.some(combination => {
+        return combination.every(index => board[index] === player);
+    });
+}
+
+    </script>
+</body>
+</html>
